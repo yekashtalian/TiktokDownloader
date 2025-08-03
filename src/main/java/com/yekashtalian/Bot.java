@@ -55,66 +55,59 @@ public class Bot extends ListenerAdapter {
 
     String url;
     boolean isTikTok;
-    boolean isTwitter;
 
-    if (content.startsWith("https://www.tiktok.com/")) {
-      isTwitter = false;
-      url = content.trim();
+    if (content.matches("https://(www\\.)?tiktok\\.com/.*")) {
+        url = content.trim();
       isTikTok = true;
     } else {
-      isTikTok = false;
-      if (content.startsWith("https://x.com/")) {
-        url = content.trim();
-        isTwitter = true;
-      } else {
-        url = null;
-        isTwitter = false;
-      }
+        isTikTok = false;
+        if (content.matches("https://x\\.com/.*")) {
+          url = content.trim();
+        } else {
+            // Игнорировать все остальные сообщения
+          return;
+        }
     }
 
     event
         .getChannel()
         .sendMessage("⏳ Хлео, качаю відео...")
         .queue(
-            loadingMsg -> {
-              new Thread(
-                      () -> {
-                        try {
-                          File file;
-                          if (isTikTok) {
-                            file = TikTokDownloader.downloadWithWatermark(url);
-                          } else if (isTwitter) {
-                            file = TwitterDownloader.downloadMedia(url);
-                          } else {
-                            throw new InvalidMessageException(" ❌ Не валідна ссилка пацик");
-                          }
-                          loadingMsg.delete().queue();
-                          event.getMessage().delete().queue();
-                          event
-                              .getChannel()
-                              .sendMessage(event.getAuthor().getAsMention())
-                              .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(file))
-                              .queue();
-                        } catch (InvalidMessageException e) {
-                          e.printStackTrace();
-                          event
-                              .getChannel()
-                              .sendMessage(event.getAuthor().getAsMention() + e.getMessage())
-                              .queue();
-                        } catch (Exception e) {
-                          e.printStackTrace();
-                          loadingMsg.delete().queue();
-                          event.getMessage().delete().queue();
-                          event
-                              .getChannel()
-                              .sendMessage(
-                                  event.getAuthor().getAsMention()
-                                      + ", ❌ Шось не так чіклео, не можу скачати відео")
-                              .queue();
+            loadingMsg -> new Thread(
+                    () -> {
+                      try {
+                        File file;
+                        if (isTikTok) {
+                          file = TikTokDownloader.downloadWithWatermark(url);
+                        } else {
+                          file = TwitterDownloader.downloadMedia(url);
                         }
-                      })
-                  .start();
-            });
+                        loadingMsg.delete().queue();
+                        event.getMessage().delete().queue();
+                        event
+                            .getChannel()
+                            .sendMessage(event.getAuthor().getAsMention())
+                            .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(file))
+                            .queue();
+                      } catch (InvalidMessageException e) {
+                        e.printStackTrace();
+                        event
+                            .getChannel()
+                            .sendMessage(event.getAuthor().getAsMention() + e.getMessage())
+                            .queue();
+                      } catch (Exception e) {
+                        e.printStackTrace();
+                        loadingMsg.delete().queue();
+                        event.getMessage().delete().queue();
+                        event
+                            .getChannel()
+                            .sendMessage(
+                                event.getAuthor().getAsMention()
+                                    + ", ❌ Шось не так чіклео, не можу скачати відео")
+                            .queue();
+                      }
+                    })
+                .start());
   }
 
   @Override
