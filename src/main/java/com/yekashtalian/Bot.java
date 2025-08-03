@@ -1,5 +1,6 @@
 package com.yekashtalian;
 
+import com.yekashtalian.exception.InvalidMessageException;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -10,6 +11,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
+import java.io.File;
 
 public class Bot extends ListenerAdapter {
   static {
@@ -72,19 +74,19 @@ public class Bot extends ListenerAdapter {
 
     event
         .getChannel()
-        .sendMessage("⏳ Хлео, качаю відео жди бля")
+        .sendMessage("⏳ Хлео, качаю відео...")
         .queue(
             loadingMsg -> {
               new Thread(
                       () -> {
                         try {
-                          java.io.File file;
+                          File file;
                           if (isTikTok) {
                             file = TikTokDownloader.downloadWithWatermark(url);
                           } else if (isTwitter) {
                             file = TwitterDownloader.downloadMedia(url);
                           } else {
-                            throw new IllegalArgumentException("Неизвестный тип ссылки");
+                            throw new InvalidMessageException(" ❌ Не валідна ссилка пацик");
                           }
                           loadingMsg.delete().queue();
                           event.getMessage().delete().queue();
@@ -92,6 +94,12 @@ public class Bot extends ListenerAdapter {
                               .getChannel()
                               .sendMessage(event.getAuthor().getAsMention())
                               .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(file))
+                              .queue();
+                        } catch (InvalidMessageException e) {
+                          e.printStackTrace();
+                          event
+                              .getChannel()
+                              .sendMessage(event.getAuthor().getAsMention() + e.getMessage())
                               .queue();
                         } catch (Exception e) {
                           e.printStackTrace();
