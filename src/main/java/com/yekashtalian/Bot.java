@@ -56,12 +56,12 @@ public class Bot extends ListenerAdapter {
     String url;
     boolean isTikTok;
 
-    if (content.matches("https://(www\\.)?tiktok\\.com/.*")) {
+    if (content.startsWith("https://www.tiktok.com/") || content.startsWith("https://vm.tiktok.com/")) {
         url = content.trim();
       isTikTok = true;
     } else {
         isTikTok = false;
-        if (content.matches("https://x\\.com/.*")) {
+        if (content.startsWith("https://x.com/")) {
           url = content.trim();
         } else {
             // Игнорировать все остальные сообщения
