@@ -77,18 +77,31 @@ public class Bot extends ListenerAdapter {
                     () -> {
                       try {
                         File file;
+                        String fileType = null;
                         if (isTikTok) {
                           file = TikTokDownloader.downloadWithWatermark(url);
                         } else {
-                          file = TwitterDownloader.downloadMedia(url);
+                          TwitterDownloader.TwitterMediaResult result = TwitterDownloader.downloadMediaWithType(url);
+                          file = result.file;
+                          fileType = result.type;
                         }
                         loadingMsg.delete().queue();
                         event.getMessage().delete().queue();
-                        event
-                            .getChannel()
-                            .sendMessage(event.getAuthor().getAsMention())
-                            .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(file))
-                            .queue();
+                        if (!isTikTok && fileType != null && fileType.equals("gif")) {
+                          System.out.println("[DEBUG] Bot: Detected Twitter GIF, converting mp4 to gif...");
+                          File gifFile = TwitterDownloader.convertMp4ToGif(file);
+                          System.out.println("[DEBUG] Bot: Converted GIF file path: " + gifFile.getAbsolutePath() + ", size: " + gifFile.length() + " bytes");
+                          event.getChannel()
+                              .sendMessage(event.getAuthor().getAsMention())
+                              .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(gifFile, "twitter.gif"))
+                              .queue();
+                        } else {
+                          System.out.println("[DEBUG] Bot: Sending as mp4. File path: " + file.getAbsolutePath() + ", size: " + file.length() + " bytes");
+                          event.getChannel()
+                              .sendMessage(event.getAuthor().getAsMention())
+                              .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(file, isTikTok ? "tiktok.mp4" : "twitter.mp4"))
+                              .queue();
+                        }
                       } catch (InvalidMessageException e) {
                         e.printStackTrace();
                         event
