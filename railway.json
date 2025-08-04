@@ -1,0 +1,9 @@
+{
+  "nixpacks": {
+    "phases": {
+      "setup": {
+        "nixPkgs": ["ffmpeg"]
+      }
+    }
+  }
+}
