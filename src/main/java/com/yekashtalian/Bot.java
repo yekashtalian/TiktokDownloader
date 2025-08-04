@@ -87,21 +87,28 @@ public class Bot extends ListenerAdapter {
                         }
                         loadingMsg.delete().queue();
                         event.getMessage().delete().queue();
+                        // Проверка размера файла перед отправкой (лимит Discord 8 МБ)
+                        long maxSize = 8 * 1024 * 1024; // 8 МБ
+                        File fileToSend = file;
+                        String fileNameToSend = isTikTok ? "tiktok.mp4" : "twitter.mp4";
                         if (!isTikTok && fileType != null && fileType.equals("gif")) {
                           System.out.println("[DEBUG] Bot: Detected Twitter GIF, converting mp4 to gif...");
                           File gifFile = TwitterDownloader.convertMp4ToGif(file);
                           System.out.println("[DEBUG] Bot: Converted GIF file path: " + gifFile.getAbsolutePath() + ", size: " + gifFile.length() + " bytes");
-                          event.getChannel()
-                              .sendMessage(event.getAuthor().getAsMention())
-                              .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(gifFile, "twitter.gif"))
-                              .queue();
-                        } else {
-                          System.out.println("[DEBUG] Bot: Sending as mp4. File path: " + file.getAbsolutePath() + ", size: " + file.length() + " bytes");
-                          event.getChannel()
-                              .sendMessage(event.getAuthor().getAsMention())
-                              .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(file, isTikTok ? "tiktok.mp4" : "twitter.mp4"))
-                              .queue();
+                          fileToSend = gifFile;
+                          fileNameToSend = "twitter.gif";
                         }
+                        if (fileToSend.length() > maxSize) {
+                          System.out.println("[DEBUG] Bot: File too large for Discord (" + fileToSend.length() + " bytes)");
+                          event.getChannel()
+                              .sendMessage(event.getAuthor().getAsMention() + ", ❌ Файл дуже великий, ліміт 8 МБ")
+                              .queue();
+                          return;
+                        }
+                        event.getChannel()
+                            .sendMessage(event.getAuthor().getAsMention())
+                            .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(fileToSend, fileNameToSend))
+                            .queue();
                       } catch (InvalidMessageException e) {
                         e.printStackTrace();
                         event
