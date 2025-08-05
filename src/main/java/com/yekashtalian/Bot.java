@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
+import java.io.IOException;
 
 public class Bot extends ListenerAdapter {
   static {
@@ -87,8 +88,6 @@ public class Bot extends ListenerAdapter {
                         }
                         loadingMsg.delete().queue();
                         event.getMessage().delete().queue();
-                        // Проверка размера файла перед отправкой (лимит Discord 8 МБ)
-                        long maxSize = 8 * 1024 * 1024; // 8 МБ
                         File fileToSend = file;
                         String fileNameToSend = isTikTok ? "tiktok.mp4" : "twitter.mp4";
                         if (!isTikTok && fileType != null && fileType.equals("gif")) {
@@ -98,18 +97,20 @@ public class Bot extends ListenerAdapter {
                           fileToSend = gifFile;
                           fileNameToSend = "twitter.gif";
                         }
-                        if (fileToSend.length() > maxSize) {
-                          System.out.println("[DEBUG] Bot: File too large for Discord (" + fileToSend.length() + " bytes)");
-                          event.getChannel()
-                              .sendMessage(event.getAuthor().getAsMention() + ", ❌ Файл дуже великий, ліміт 8 МБ")
-                              .queue();
-                          return;
-                        }
                         event.getChannel()
                             .sendMessage(event.getAuthor().getAsMention())
                             .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(fileToSend, fileNameToSend))
                             .queue();
-                      } catch (InvalidMessageException e) {
+                      } catch (IOException e){
+                        e.printStackTrace();
+                        event
+                            .getChannel()
+                            .sendMessage(
+                                event.getAuthor().getAsMention()
+                                    + ", ❌ Відос тільки для залогінених юзерів, не можу скачати")
+                            .queue();
+                      }
+                      catch (InvalidMessageException e) {
                         e.printStackTrace();
                         event
                             .getChannel()
