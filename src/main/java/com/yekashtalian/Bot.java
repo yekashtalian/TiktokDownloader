@@ -98,7 +98,7 @@ public class Bot extends ListenerAdapter {
                           fileNameToSend = "twitter.gif";
                         }
                         event.getChannel()
-                            .sendMessage(event.getAuthor() + ":")
+                            .sendMessage(event.getAuthor().getName() + ":")
                             .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(fileToSend, fileNameToSend))
                             .queue();
                       } catch (IOException e){
