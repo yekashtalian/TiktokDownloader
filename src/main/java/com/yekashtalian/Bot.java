@@ -39,7 +39,7 @@ public class Bot extends ListenerAdapter {
             CacheFlag.EMOJI,
             CacheFlag.STICKER,
             CacheFlag.SCHEDULED_EVENTS)
-        .setActivity(net.dv8tion.jda.api.entities.Activity.playing("Dota 2"))
+        .setActivity(net.dv8tion.jda.api.entities.Activity.watching("TikTok"))
         .addEventListeners(new Bot())
         .build();
   }
@@ -57,80 +57,91 @@ public class Bot extends ListenerAdapter {
     String url;
     boolean isTikTok;
 
-    if (content.startsWith("https://www.tiktok.com/") || content.startsWith("https://vm.tiktok.com/")) {
-        url = content.trim();
+    if (content.startsWith("https://www.tiktok.com/")
+        || content.startsWith("https://vm.tiktok.com/")) {
+      url = content.trim();
       isTikTok = true;
     } else {
-        isTikTok = false;
-        if (content.startsWith("https://x.com/")) {
-          url = content.trim();
-        } else {
-            // Игнорировать все остальные сообщения
-          return;
-        }
+      isTikTok = false;
+      if (content.startsWith("https://x.com/")) {
+        url = content.trim();
+      } else {
+        // Игнорировать все остальные сообщения
+        return;
+      }
     }
 
     event
         .getChannel()
         .sendMessage("⏳ Хлео, качаю відео...")
         .queue(
-            loadingMsg -> new Thread(
-                    () -> {
-                      try {
-                        File file;
-                        String fileType = null;
-                        if (isTikTok) {
-                          file = TikTokDownloader.downloadWithWatermark(url);
-                        } else {
-                          TwitterDownloader.TwitterMediaResult result = TwitterDownloader.downloadMediaWithType(url);
-                          file = result.file;
-                          fileType = result.type;
-                        }
-                        loadingMsg.delete().queue();
-                        event.getMessage().delete().queue();
-                        File fileToSend = file;
-                        String fileNameToSend = isTikTok ? "tiktok.mp4" : "twitter.mp4";
-                        if (!isTikTok && fileType != null && fileType.equals("gif")) {
-                          System.out.println("[DEBUG] Bot: Detected Twitter GIF, converting mp4 to gif...");
-                          File gifFile = TwitterDownloader.convertMp4ToGif(file);
-                          System.out.println("[DEBUG] Bot: Converted GIF file path: " + gifFile.getAbsolutePath() + ", size: " + gifFile.length() + " bytes");
-                          fileToSend = gifFile;
-                          fileNameToSend = "twitter.gif";
-                        }
-                        event.getChannel()
-                            .sendMessage(event.getAuthor().getName() + ":")
-                            .addFiles(net.dv8tion.jda.api.utils.FileUpload.fromData(fileToSend, fileNameToSend))
-                            .queue();
-                      } catch (IOException e){
-                        e.printStackTrace();
-                        loadingMsg.delete().queue();
-                        event.getMessage().delete().queue();
-                        event
-                            .getChannel()
-                            .sendMessage(
-                                event.getAuthor().getAsMention()
-                                    + ", ❌ Відос тільки для залогінених юзерів, не можу скачати")
-                            .queue();
-                      }
-                      catch (InvalidMessageException e) {
-                        e.printStackTrace();
-                        event
-                            .getChannel()
-                            .sendMessage(event.getAuthor().getAsMention() + e.getMessage())
-                            .queue();
-                      } catch (Exception e) {
-                        e.printStackTrace();
-                        loadingMsg.delete().queue();
-                        event.getMessage().delete().queue();
-                        event
-                            .getChannel()
-                            .sendMessage(
-                                event.getAuthor().getAsMention()
-                                    + ", ❌ Шось не так чіклео, не можу скачати відео")
-                            .queue();
-                      }
-                    })
-                .start());
+            loadingMsg ->
+                new Thread(
+                        () -> {
+                          try {
+                            File file;
+                            String fileType = null;
+                            if (isTikTok) {
+                              file = TikTokDownloader.downloadWithWatermark(url);
+                            } else {
+                              TwitterDownloader.TwitterMediaResult result =
+                                  TwitterDownloader.downloadMediaWithType(url);
+                              file = result.file;
+                              fileType = result.type;
+                            }
+                            loadingMsg.delete().queue();
+                            event.getMessage().delete().queue();
+                            File fileToSend = file;
+                            String fileNameToSend = isTikTok ? "tiktok.mp4" : "twitter.mp4";
+                            if (!isTikTok && fileType != null && fileType.equals("gif")) {
+                              System.out.println(
+                                  "[DEBUG] Bot: Detected Twitter GIF, converting mp4 to gif...");
+                              File gifFile = TwitterDownloader.convertMp4ToGif(file);
+                              System.out.println(
+                                  "[DEBUG] Bot: Converted GIF file path: "
+                                      + gifFile.getAbsolutePath()
+                                      + ", size: "
+                                      + gifFile.length()
+                                      + " bytes");
+                              fileToSend = gifFile;
+                              fileNameToSend = "twitter.gif";
+                            }
+                            event
+                                .getChannel()
+                                .sendMessage(event.getAuthor().getName() + ":")
+                                .addFiles(
+                                    net.dv8tion.jda.api.utils.FileUpload.fromData(
+                                        fileToSend, fileNameToSend))
+                                .queue();
+                          } catch (IOException e) {
+                            e.printStackTrace();
+                            loadingMsg.delete().queue();
+                            event.getMessage().delete().queue();
+                            event
+                                .getChannel()
+                                .sendMessage(
+                                    event.getAuthor().getAsMention()
+                                        + ", ❌ Відос тільки для залогінених юзерів, не можу скачати")
+                                .queue();
+                          } catch (InvalidMessageException e) {
+                            e.printStackTrace();
+                            event
+                                .getChannel()
+                                .sendMessage(event.getAuthor().getAsMention() + e.getMessage())
+                                .queue();
+                          } catch (Exception e) {
+                            e.printStackTrace();
+                            loadingMsg.delete().queue();
+                            event.getMessage().delete().queue();
+                            event
+                                .getChannel()
+                                .sendMessage(
+                                    event.getAuthor().getAsMention()
+                                        + ", ❌ Шось не так чіклео, не можу скачати відео")
+                                .queue();
+                          }
+                        })
+                    .start());
   }
 
   @Override
